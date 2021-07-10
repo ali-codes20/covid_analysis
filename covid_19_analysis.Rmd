@@ -1,0 +1,124 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(dplyr)
+library(readr)
+
+# Load the data
+confirmed <- read_csv('covid19_confirmed_global.csv')
+deaths <- read_csv('covid19_deaths_global.csv')
+recovered <- read_csv('covid19_recovered_global.csv')
+
+# Inspect the data
+head(confirmed)
+head(deaths)
+head(recovered)
+```
+```{r}
+# Sum the total number of cases on March 22nd
+total_cases <- confirmed %>% select(`3/22/20`) %>% sum()
+total_cases
+```
+
+```{r}
+# Filter for countries in the northern hemisphere
+northern_hemisphere_total_cases <- confirmed %>% filter(Lat > 0)%>%
+  select('3/22/20')%>%
+  sum()
+northern_hemisphere_total_cases
+
+# Filter for Australia cases
+australia_confirmed_cases <- confirmed %>% filter(`Country/Region` == 'Australia') %>%
+  select('3/22/20') %>%
+  sum()
+australia_confirmed_cases
+# Display percentages
+northern_hemisphere_total_cases_percentage <- (northern_hemisphere_total_cases / total_cases) * 100
+northern_hemisphere_total_cases_percentage
+australia_confirmed_cases_percentage <- (australia_confirmed_cases / total_cases) * 100
+australia_confirmed_cases_percentage
+```
+```{r}
+# Group by countries
+countries_grouped <- confirmed %>% group_by(`Country/Region`) %>% summarize_at(vars(-Lat, -Long, -`Province/State`),sum)
+countries_grouped
+# Filter the grouped data set for Australia
+austrlia_grouped_confirmed <- countries_grouped %>% filter('Country/Region' == 'Australia') %>%
+  select('3/22/20')
+australia_confirmed_cases
+```
+```{r}
+# Group by countries
+countries_grouped_recovered <- recovered %>% group_by(`Country/Region`) %>% summarize_at(vars(-Lat, -Long, -`Province/State`),sum)
+countries_grouped_recovered
+us_grouped_confirmed <- countries_grouped %>% filter(`Country/Region` == 'US') %>% select('3/22/20') 
+us_grouped_confirmed
+us_grouped_recovered <- countries_grouped_recovered %>% filter(`Country/Region` == 'US') %>% select('3/22/20')
+us_grouped_recovered
+
+us_grouped_recovered_percentage <- us_grouped_recovered / us_grouped_confirmed * 100
+us_grouped_recovered_percentage
+
+uk_grouped_confirmed <- countries_grouped %>% filter(`Country/Region` == 'United Kingdom') %>% select('3/22/20') 
+uk_grouped_confirmed
+uk_grouped_recovered <- countries_grouped_recovered %>% filter(`Country/Region` == 'United Kingdom') %>% select('3/22/20')
+uk_grouped_recovered
+
+uk_grouped_recovered_percentage <- uk_grouped_recovered / uk_grouped_confirmed * 100
+uk_grouped_recovered_percentage
+```
+```{r}
+# Filter to inspect the US row
+countries_grouped_recovered %>% filter(`Country/Region` == 'United Kingdom')
+```
+
+```{r}
+# Find the maximum number of confirmed and recovered cases
+max_confirmed <- max(uk_grouped_confirmed)
+max_confirmed
+max_recovered <- max(uk_grouped_recovered)
+max_recovered
+max_recovered/max_confirmed * 100
+```
+```{r}
+library(janitor)
+transposed_confirmed <- transposed_confirmed %>% row_to_names(row_number = 1)
+transposed_confirmed %>% head()
+```
+```{r}
+# Transform the columns to numeric values
+transposed_confirmed <- apply(transposed_confirmed, 2, as.numeric) %>% as.data.frame()
+head(transposed_confirmed)
+```
+```{r}
+library(ggplot2)
+```
+```{r}
+# Find the maximum number of confirmed cases in the US
+transposed_confirmed %>% select(US) %>% max()
+```
+
+```{r}
+# Find the maximum number of confirmed cases in the UK
+transposed_confirmed %>% select('United Kingdom') %>% max()
+```
+```{r}
+transposed_confirmed <- transposed_confirmed %>% mutate(date = c(1:nrow(transposed_confirmed)))
+head(select(transposed_confirmed, date))
+transposed_confirmed
+```
+```{r}
+# Create a line graph with date on the X axis and number of cases in Italy on the Y axis
+transposed_confirmed %>% ggplot(aes(x = date, y = Italy)) + geom_line()
+```
+
+```{r}
+# Create a line graph with date on the X axis and number of cases in US on the Y axis
+transposed_confirmed %>% ggplot(aes(x = date, y = US)) + geom_line(colour = "blue")
+```
+```{r}
+transposed_confirmed %>% ggplot(aes(x = date, y = Italy)) + geom_line(colour = "red") + labs(x = "Number of days since January 22nd, 2020", y = "Number of confirmed cases", title = "Confirmed cases of COVID-19 in Italy")
+```
+
